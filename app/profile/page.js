@@ -9,10 +9,15 @@ const Profile = () => {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Redirect if not logged in
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth");
+    if (!authLoading) {
+      if (!user) {
+        // Not logged in → go to auth
+        router.push("/auth");
+      } else if (!user.emailVerified) {
+        // Logged in but not verified → go to verify page
+        router.push("/verify");
+      }
     }
   }, [authLoading, user, router]);
 
@@ -26,9 +31,9 @@ const Profile = () => {
     );
   }
 
-  if (!user) return null; // avoid flash before redirect
+  if (!user || !user.emailVerified) return null; // avoid flicker
 
-  // ✅ Authenticated user
+  // ✅ Authenticated + Verified user
   return <ProfilePage />;
 };
 

@@ -7,6 +7,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  sendEmailVerification,
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
@@ -51,11 +52,32 @@ export default function PremiumAuthPage() {
 
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        const user = userCredential.user;
+
+        // Check if email is verified
+        if (!user.emailVerified) {
+          router.push("/verify");
+          return;
+        }
+
+        router.push("/profile");
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        const user = userCredential.user;
+
+        // Send verification email to new users
+        await sendEmailVerification(user);
+        router.push("/verify");
       }
-      router.push("/attendance");
     } catch (err) {
       setErrors({
         submit: err.message
@@ -67,6 +89,7 @@ export default function PremiumAuthPage() {
       setIsLoading(false);
     }
   };
+
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);

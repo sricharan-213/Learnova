@@ -9,10 +9,15 @@ const Register = () => {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
-  // Redirect to /auth if not logged in
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/auth");
+    if (!authLoading) {
+      if (!user) {
+        // Not logged in → go to login
+        router.push("/auth");
+      } else if (!user.emailVerified) {
+        // Logged in but not verified → go to verify page
+        router.push("/verify");
+      }
     }
   }, [authLoading, user, router]);
 
@@ -26,9 +31,9 @@ const Register = () => {
     );
   }
 
-  if (!user) return null; // Prevent flash before redirect
+  if (!user || !user.emailVerified) return null; // avoid flash before redirect
 
-  // ✅ Authenticated user
+  // ✅ Authenticated + Verified
   return <RegisterPage />;
 };
 
