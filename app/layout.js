@@ -34,7 +34,7 @@ export const metadata = {
     "school software",
     "teacher tools",
     "smart attendance",
-    "Learnova"
+    "Learnova",
   ],
   alternates: {
     canonical: "https://learnova-web.vercel.app",
@@ -66,6 +66,7 @@ export const metadata = {
     images: ["/og-image.jpg"],
   },
   other: {
+    "google-site-verification": "3qjYnT7GW81-zwJBwv3wJABvxbiSOgDyAlTCKxh9nEs",
     "application/ld+json": JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Organization",
