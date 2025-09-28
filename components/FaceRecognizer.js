@@ -191,7 +191,7 @@ export default function FaceRecognizer() {
         box.x + box.width / 2,
         box.y - 8
       );
-
+ 
       setMessage(`Detected: ${label}`);
       setConfidence(confidenceScore);
 
