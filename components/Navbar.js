@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const { user, userProfile, signOut, isAuthenticated } = useAuthContext();
   const dropdownRef = useRef(null);
+  const pathname = usePathname();
 
   // Handle scroll effect
   useEffect(() => {
@@ -196,19 +198,32 @@ export function Navbar() {
 
             {/* Enhanced Desktop Navigation - FIXED: Removed inline animation styles */}
             <div className="hidden lg:flex items-center space-x-1">
-              {navigationItems.map((item, index) => (
+             {navigationItems.map((item, index) => {
+                const isActive = pathname === item.href;
+                return (
                 <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`relative px-4 py-2 text-white/80 hover:text-white transition-all duration-300 font-medium group overflow-hidden rounded-lg animate-fadeIn-${index}`}
+                key={item.href}
+                href={item.href}
+                className={`relative px-4 py-2 font-medium group overflow-hidden rounded-lg transition-all duration-300 animate-fadeIn-${index}
+                ${
+                  isActive
+                  ? "text-white bg-gradient-to-r from-accent/30 to-blue-500/30"
+                  : "text-white/80 hover:text-white"
+                }`}
                 >
-                  <span className="relative z-10">{item.label}</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-accent/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg" />
-                  <div className="absolute bottom-0 left-1/2 w-0 h-0.5 bg-gradient-to-r from-accent to-blue-500 group-hover:w-full group-hover:left-0 transition-all duration-300" />
-                  <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg animate-pulse" />
-                </Link>
-              ))}
-
+                <span className="relative z-10">{item.label}</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-accent/20 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg" />
+                <div
+                className={`absolute bottom-0 h-0.5 bg-gradient-to-r from-accent to-blue-500 transition-all duration-300 ${
+                  isActive
+                  ? "left-0 w-full"
+                  : "left-1/2 w-0 group-hover:left-0 group-hover:w-full"
+                  }`}
+                  />
+                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg animate-pulse" />
+               </Link>
+               );
+               })}
               {/* Enhanced Auth Section */}
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4 ml-6">
