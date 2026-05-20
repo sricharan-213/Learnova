@@ -1,5 +1,5 @@
 import { connectDb } from "@/lib/mongodb";
-import { verifyFirebaseToken } from "@/lib/firebase-admin";
+import { verifyFirebaseToken, getUserProfile } from "@/lib/firebase-admin";
 import { jsonError, jsonSuccess } from "@/lib/api-response";
 
 export async function GET(request) {
@@ -13,13 +13,31 @@ export async function GET(request) {
       return jsonError("Unauthorized", 401);
     }
 
+    const profile = await getUserProfile(decodedToken.uid);
+
+    if (!profile) {
+      return jsonError("User profile not found", 404);
+    }
+
     const db = await connectDb();
 
-    const exceptions = await db
-      .collection("exceptions")
-      .find({ status: "pending" })
-      .sort({ createdAt: -1 })
-      .toArray();
+    let exceptions;
+
+    if (profile.role === "admin" || profile.role === "teacher") {
+      exceptions = await db
+        .collection("exceptions")
+        .find({ status: "pending" })
+        .sort({ createdAt: -1 })
+        .toArray();
+    } else if (profile.role === "student") {
+      exceptions = await db
+        .collection("exceptions")
+        .find({ status: "pending", studentEmail: decodedToken.email })
+        .sort({ createdAt: -1 })
+        .toArray();
+    } else {
+      return jsonError("Forbidden", 403);
+    }
 
     return jsonSuccess(exceptions, 200);
   } catch (error) {
