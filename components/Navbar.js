@@ -95,22 +95,24 @@ export function Navbar() {
     };
   }, [handleClickOutside]);
 
-  // ESC Key Support
+  // ESC Key Support — also listens to the global learnova:escape custom event
   useEffect(() => {
+    const close = () => {
+      setIsDropdownOpen(false);
+      setIsNotificationOpen(false);
+      setIsMenuOpen(false);
+    };
     const handleEscape = (event) => {
-      if (event.key === "Escape") {
-        setIsDropdownOpen(false);
-        setIsNotificationOpen(false);
-      }
+      if (event.key === "Escape") close();
     };
 
     window.addEventListener("keydown", handleEscape);
+    window.addEventListener("learnova:escape", close);
 
-    return () =>
-      window.removeEventListener(
-        "keydown",
-        handleEscape
-      );
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("learnova:escape", close);
+    };
   }, []);
 
   // Prevent body scroll
