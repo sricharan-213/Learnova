@@ -44,10 +44,42 @@ import { useAuth } from "@/hooks/useAuth";
 import { weeklySchedule, mockRecentActivity } from "@/constants/mockData";
 import AttendanceAnalytics from "./dashboard/AttendanceAnalytics";
 
+const StudentClock = React.memo(() => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const clockTimer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(clockTimer);
+  }, []);
+
+  return (
+    <div className="text-right">
+      <div className="text-white font-semibold text-lg">
+        {currentTime.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })}
+      </div>
+      <div className="text-xs text-gray-400">
+        {currentTime.toLocaleDateString([], {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}
+      </div>
+    </div>
+  );
+});
+
+StudentClock.displayName = "StudentClock";
+
 const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
 
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [attendanceStatus, setAttendanceStatus] = useState("pending");
   const [todayClasses, setTodayClasses] = useState([]);
 
@@ -64,18 +96,17 @@ const StudentDashboard = () => {
       setLoading(false);
     }, 1500);
 
-    const timer = setInterval(() => {
+    const checkSchedule = () => {
       const now = new Date();
-      setCurrentTime(now);
-
       const hour = now.getHours();
       const minute = now.getMinutes();
       const day = now.getDay();
 
       const isWeekday = day >= 1 && day <= 5;
       const isAttendanceTime = hour === 9 && minute <= 10;
+      const newIsAttendance = isWeekday && isAttendanceTime;
 
-      setIsAttendanceWindow(isWeekday && isAttendanceTime);
+      setIsAttendanceWindow((prev) => (prev !== newIsAttendance ? newIsAttendance : prev));
 
       const dayNames = [
         "Sunday",
@@ -88,8 +119,13 @@ const StudentDashboard = () => {
       ];
 
       const today = dayNames[day];
-
-      setTodayClasses(weeklySchedule[today] || []);
+      const newClasses = weeklySchedule[today] || [];
+      setTodayClasses((prev) => {
+        if (JSON.stringify(prev) !== JSON.stringify(newClasses)) {
+          return newClasses;
+        }
+        return prev;
+      });
 
       if (weeklySchedule[today]) {
         const upcoming = weeklySchedule[today].find((cls) => {
@@ -100,11 +136,21 @@ const StudentDashboard = () => {
             hour < classHour ||
             (hour === classHour && minute < classMinute)
           );
-        });
+        }) || null;
 
-        setUpcomingClass(upcoming);
+        setUpcomingClass((prev) => {
+          if (prev?.time !== upcoming?.time || prev?.subject !== upcoming?.subject) {
+            return upcoming;
+          }
+          return prev;
+        });
+      } else {
+        setUpcomingClass((prev) => (prev !== null ? null : prev));
       }
-    }, 1000);
+    };
+
+    checkSchedule();
+    const timer = setInterval(checkSchedule, 10000);
 
     setRecentActivity(mockRecentActivity);
 
@@ -165,18 +211,7 @@ const StudentDashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-5">
-            <div className="text-right">
-              <div className="text-white font-semibold text-lg">
-                {currentTime.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
-              </div>
-              <div className="text-xs text-gray-400">
-                {currentTime.toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </div>
-            </div>
+            <StudentClock />
             <button className="relative p-2.5 bg-gray-800/60 hover:bg-gray-700/60 rounded-xl border border-gray-600/40 transition-colors shadow-sm">
               <Bell className="w-5 h-5 text-gray-300" />
               <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-indigo-500 text-white text-xs rounded-full flex items-center justify-center shadow-md">
