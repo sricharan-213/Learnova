@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { connectDb } from "@/lib/mongodb";
 import { verifyFirebaseToken, getUserProfile } from "@/lib/firebase-admin";
 import { jsonError, jsonSuccess } from "@/lib/api-response";
+import { escapeRegex, sanitizeSortField } from "@/utils/mongoUtils";
+
+const ALLOWED_SORT_FIELDS = new Set([
+  "createdAt",
+  "updatedAt",
+  "status",
+  "date",
+  "studentEmail",
+  "reason",
+]);
 
 export async function GET(request) {
   try {
@@ -43,11 +53,16 @@ export async function GET(request) {
 
     const skip = (page - 1) * limit;
 
-    // Search
-    const search = searchParams.get("search") || "";
+    // Search — escape metacharacters and cap length to prevent ReDoS
+    const rawSearch = searchParams.get("search") || "";
+    const search = escapeRegex(rawSearch);
 
-    // Sorting
-    const sortBy = searchParams.get("sortBy") || "createdAt";
+    // Sorting — validate against an explicit allowlist to prevent field-name injection
+    const sortBy = sanitizeSortField(
+      searchParams.get("sortBy"),
+      ALLOWED_SORT_FIELDS,
+      "createdAt"
+    );
 
     const sortOrder =
       searchParams.get("sortOrder") === "asc" ? 1 : -1;
