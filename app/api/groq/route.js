@@ -2,6 +2,7 @@ import { jsonError, jsonSuccess } from "@/lib/api-response";
 import { verifyFirebaseToken } from "@/lib/firebase-admin";
 import { connectDb } from "@/lib/mongodb";
 import { detectInjection, sanitizeMessage, buildSecureMessages } from "@/utils/promptGuard";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MAX_MESSAGE_LENGTH = 2000;
@@ -90,12 +91,9 @@ export async function POST(request) {
     const authResult = await verifyFirebaseToken(token);
 
     if (!authResult.valid) {
-      return NextResponse.json(
-        {
-          error: "Unauthorized",
-          reason: authResult.reason,
-        },
-        { status: 401 }
+      return jsonError(
+        { message: "Unauthorized", reason: authResult.reason },
+        401
       );
     }
 
@@ -109,7 +107,6 @@ export async function POST(request) {
     }
 
     // Usage logging with user ID for audit/quota tracking
-    console.log(`[nova-ai-quota-tracker] Paid Groq API request by User UID: ${decodedToken.uid} (${decodedToken.email}) at ${new Date().toISOString()}`);
 
     const { message, userMessage } = await request.json();
     const rawMessage = typeof message === "string" ? message : userMessage;
@@ -166,7 +163,10 @@ export async function POST(request) {
     }
 
     if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}));
+      const errorBody = await response.json().catch((error) => {
+        console.error("Error:", error);
+        return { error: "Something went wrong" };
+      });
       return jsonError(
         errorBody?.error?.message || "Groq request failed",
         response.status,
