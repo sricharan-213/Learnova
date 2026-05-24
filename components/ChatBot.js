@@ -499,7 +499,9 @@ const LearnovaChatbot = () => {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.isBot ? "justify-start" : "justify-end"}`}
+                className={`flex animate-fadeIn ${
+  message.isBot ? "justify-start" : "justify-end"
+}`}
               >
                 <div className={`flex max-w-[85%] items-end gap-2 ${message.isBot ? "flex-row" : "flex-row-reverse"}`}>
                   {/* Avatar */}
@@ -562,7 +564,12 @@ const LearnovaChatbot = () => {
                         />
                       ))}
                     </div>
-                    <span className={`text-xs ${t.dot}`}>Nova is thinking…</span>
+                    <span
+                      className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                        }`}
+                    >
+                      Analyzing your question...
+                    </span>
                   </div>
                 </div>
               </div>
