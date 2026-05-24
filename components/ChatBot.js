@@ -22,6 +22,7 @@ import {
   Clock,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useTheme } from "next-themes";
 
 import { useAuthContext } from "@/contexts/AuthContext";
 
@@ -292,9 +293,11 @@ const LearnovaChatbot = () => {
     timestamp: new Date(),
   };
 
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const isDarkMode = resolvedTheme === "dark" || theme === "dark";
+
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -438,8 +441,8 @@ const LearnovaChatbot = () => {
   // ---------------------------------------------------------------------------
   return (
     <div
-      className={`fixed bottom-6 right-6 z-50 flex flex-col ${t.bg} rounded-xl shadow-2xl transition-all duration-300 border ${t.border} ${
-        isMinimized ? "w-72 h-16 overflow-hidden" : "w-96 h-[660px]"
+      className={`fixed z-50 flex flex-col ${t.bg} shadow-2xl transition-all duration-300 border ${t.border} ${
+        isMinimized ? "bottom-6 right-6 w-72 h-16 overflow-hidden rounded-xl" : "bottom-0 right-0 w-full h-full rounded-none sm:bottom-6 sm:right-6 sm:w-96 sm:h-[660px] sm:rounded-xl"
       }`}
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}
@@ -461,14 +464,14 @@ const LearnovaChatbot = () => {
           <button onClick={clearChat} className="hover:bg-white/20 p-2 rounded-lg transition-colors" title="Clear chat">
             <RefreshCw size={16} />
           </button>
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className="hover:bg-white/20 p-2 rounded-lg transition-colors" title="Toggle theme">
+          <button onClick={() => setTheme(isDarkMode ? "light" : "dark")} className="hover:bg-white/20 p-2 rounded-lg transition-colors" title="Toggle theme">
             {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
           </button>
           <button onClick={() => setIsMinimized(!isMinimized)} className="hover:bg-white/20 p-2 rounded-lg transition-colors" title={isMinimized ? "Expand" : "Minimize"}>
             {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
           </button>
-          <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-2 rounded-lg transition-colors" title="Close">
-            <X size={16} />
+          <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-2 sm:p-2 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" title="Close" aria-label="Close chat">
+            <X size={20} className="sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
@@ -499,7 +502,9 @@ const LearnovaChatbot = () => {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.isBot ? "justify-start" : "justify-end"}`}
+                className={`flex animate-fadeIn ${
+  message.isBot ? "justify-start" : "justify-end"
+}`}
               >
                 <div className={`flex max-w-[85%] items-end gap-2 ${message.isBot ? "flex-row" : "flex-row-reverse"}`}>
                   {/* Avatar */}
@@ -562,7 +567,12 @@ const LearnovaChatbot = () => {
                         />
                       ))}
                     </div>
-                    <span className={`text-xs ${t.dot}`}>Nova is thinking…</span>
+                    <span
+                      className={`text-xs ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                        }`}
+                    >
+                      Analyzing your question...
+                    </span>
                   </div>
                 </div>
               </div>

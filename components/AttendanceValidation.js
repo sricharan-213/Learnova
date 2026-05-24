@@ -42,18 +42,21 @@ const AttendanceValidation = ({ onValidationSuccess }) => {
     currentLocation: null, // Add this field
   });
 
-  // Load settings from Firestore
+  // Load settings from secure API endpoint
   useEffect(() => {
     const loadSettings = async () => {
+      if (!user) return; // Wait for user to be authenticated
+
       try {
-        const settingsDoc = await getDoc(
-          doc(db, "attendance_settings", "current_settings"),
-        );
-        if (settingsDoc.exists()) {
-          const settingsData = settingsDoc.data();
-          if (settingsData) {
-            delete settingsData.passcode;
+        const token = await user.getIdToken();
+        const response = await fetch("/api/attendance/settings", {
+          headers: {
+            Authorization: `Bearer ${token}`
           }
+        });
+        
+        if (response.ok) {
+          const settingsData = await response.json();
           setSettings(settingsData);
           checkTimeValidity(settingsData.timeWindow);
         }
@@ -64,7 +67,7 @@ const AttendanceValidation = ({ onValidationSuccess }) => {
     };
 
     loadSettings();
-  }, []);
+  }, [user]);
 
   const checkTimeValidity = (timeWindow) => {
     if (!timeWindow) return;
