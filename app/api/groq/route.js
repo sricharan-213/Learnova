@@ -1,7 +1,7 @@
 import { jsonSuccess, jsonError } from "@/lib/api-response";
-import { authenticateRequest, withErrorHandler } from "@/lib/error-handler";
-import { ValidationError } from "@/lib/errors";
-import { callGroq, validateGroqBody } from "@/lib/ai/groq";
+import { authenticateRequest, parseJSON } from "@/lib/error-handler";
+import { AppError, ValidationError } from "@/lib/errors";
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
@@ -17,15 +17,27 @@ export const POST = withErrorHandler(async (request) => {
     return jsonError("Too many requests. Please try again later.", 429);
   }
 
-  // Parse and validate payload
-  let body;
-  try {
-    body = await request.json();
-  } catch (e) {
-    throw new ValidationError("Invalid request payload");
-  }
+    // Parse body
+    const body = await parseJSON(request, 1024 * 10);
 
-  const { trimmedMessage } = validateGroqBody(body);
+    const validation = groqSchema.safeParse(body);
+    if (!validation.success) {
+      const firstError = validation.error.issues?.[0]?.message || "Invalid request payload";
+      throw new ValidationError(firstError);
+    }
+
+    let rawMessage = "";
+    let history = [];
+
+    if (validation.data.messages && validation.data.messages.length > 0) {
+      const lastMsg = validation.data.messages[validation.data.messages.length - 1];
+      rawMessage = lastMsg.content;
+      history = validation.data.messages.slice(0, -1);
+    } else {
+      rawMessage = validation.data.message || validation.data.userMessage;
+    }
+
+    const trimmedMessage = rawMessage.trim();
 
   // Check for prompt injection
   const injectionCheck = detectInjection(trimmedMessage);
